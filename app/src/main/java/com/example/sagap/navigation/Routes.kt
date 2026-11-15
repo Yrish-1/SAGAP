@@ -9,6 +9,9 @@ sealed class Route(val path: String) {
     object SpotDetail : Route("spot/{id}") {
         fun create(id: Int) = "spot/$id"
     }
+    object Floors : Route("floors/{id}") {
+        fun create(id: Int) = "floors/$id"
+    }
     object History : Route("history")
     object Report : Route("report")
 }

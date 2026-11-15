@@ -36,6 +36,7 @@ import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.PrimaryButton
 import com.example.sagap.ui.components.gradeColors
 import com.example.sagap.ui.components.gradeLabel
+import com.example.sagap.ui.components.ScreenTitle
 import com.example.sagap.ui.theme.*
 
 @Composable
@@ -53,6 +54,8 @@ fun MapScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+
+        ScreenTitle("Find your connection", "Alangilan Campus Map")
         CampusMap(
             spots = spots,
             results = results,

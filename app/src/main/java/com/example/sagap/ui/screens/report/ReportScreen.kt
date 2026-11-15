@@ -55,6 +55,7 @@ fun ReportScreen(
     spots: List<Spot>,
     initialSpotId: Int,
     latestTest: TestResult?,
+    onBack: () -> Unit,
     onSubmit: (spotId: Int, issue: IssueType, notes: String, attached: TestResult?) -> Unit
 ) {
     var spotId by remember(initialSpotId) { mutableStateOf(initialSpotId) }
@@ -74,7 +75,7 @@ fun ReportScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        ScreenTitle("Report a problem", "Help SAGAP improve approved study spots.")
+        ScreenTitle("Report a problem", "Help SAGAP improve approved study spots.", onBack = onBack)
 
         SectionTitle("Approved spot *")
         Box {

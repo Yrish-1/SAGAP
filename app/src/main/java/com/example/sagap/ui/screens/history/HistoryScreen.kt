@@ -35,6 +35,7 @@ import com.example.sagap.domain.fmtMbps
 import com.example.sagap.domain.last7DaysLabel
 import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.WhiteCard
+import com.example.sagap.ui.components.ScreenTitle
 import com.example.sagap.ui.theme.*
 
 private enum class HistoryFilter { ALL, GOOD, ATTENTION }
@@ -64,7 +65,9 @@ fun HistoryScreen(history: List<TestResult>, spots: List<Spot>) {
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
+
     ) {
+        item { ScreenTitle("Your connection log", "Your Wi-Fi tests, saved with your chosen spots.") }
         item {
             Row(
                 Modifier

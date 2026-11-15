@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +26,7 @@ import com.example.sagap.data.model.TestResult
 import com.example.sagap.data.repository.SpotRepository
 import com.example.sagap.ui.components.InfoCard
 import com.example.sagap.ui.components.PrimaryButton
+import com.example.sagap.ui.components.ScreenTitle
 import com.example.sagap.ui.components.SpotRow
 import com.example.sagap.ui.theme.Teal
 import com.example.sagap.ui.theme.TextDark
@@ -56,7 +56,14 @@ fun LocationPickerScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
+            // Title with the back arrow (must be INSIDE the LazyColumn)
+            item {
+                ScreenTitle(
+                    title = "Choose your location",
+                    subtitle = "Select where you are now. Only campus-approved study spots are listed.",
+                    onBack = onBack
+                )
+            }
             item {
                 OutlinedTextField(
                     value = query,
@@ -95,6 +102,8 @@ fun LocationPickerScreen(
                 )
             }
         }
+
+        // Pinned button below the list
         PrimaryButton(
             text = "Use ${pending.name}",
             icon = Icons.Outlined.Check,

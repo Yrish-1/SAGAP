@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.InfoCard
 import com.example.sagap.ui.components.MetricTiles
 import com.example.sagap.ui.components.PrimaryButton
+import com.example.sagap.ui.components.ScreenTitle
 import com.example.sagap.ui.components.SecondaryButton
 import com.example.sagap.ui.components.SectionTitle
 import com.example.sagap.ui.components.StatusPill
@@ -48,7 +50,9 @@ fun SpotDetailScreen(
     isSelected: Boolean,
     onBack: () -> Unit,
     onTest: () -> Unit,
-    onReport: () -> Unit
+    onReport: () -> Unit,
+    hasFloors: Boolean,
+    onViewFloors: () -> Unit
 ) {
     val avg = remember(results, spot.id) { SpotRepository.average(results, spot.id) }
     val recent = remember(results, spot.id) { SpotRepository.recent(results, spot.id).take(3) }
@@ -62,10 +66,12 @@ fun SpotDetailScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ScreenTitle(spot.name, onBack = onBack)
+
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (spot.onHold) StatusPill("SAFETY HOLD", GradeRed, GradeRedBg)
             else StatusPill("OPEN", GradeGreen, GradeGreenBg)
-            if (isSelected) StatusPill("Selected", Teal, tealSoft)
+            if (isSelected) StatusPill("Connected", Teal, tealSoft)
         }
 
         WhiteCard {
@@ -163,7 +169,11 @@ fun SpotDetailScreen(
             onClick = onTest,
             icon = Icons.Outlined.Speed,
             enabled = !spot.onHold
+
         )
+        if (hasFloors) {
+            SecondaryButton("View floor maps", onClick = onViewFloors, icon = Icons.Outlined.Layers)
+        }
         SecondaryButton("Report a problem here", onClick = onReport, icon = Icons.Outlined.Flag)
     }
 }

@@ -27,6 +27,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.sagap.data.repository.SpotRepository
 import com.example.sagap.data.sample.SampleData
+import com.example.sagap.data.sample.FloorData
+import com.example.sagap.ui.screens.map.FloorMapScreen
 import com.example.sagap.navigation.Route
 import com.example.sagap.ui.SagapViewModel
 import com.example.sagap.ui.components.PlaceholderScreen
@@ -92,7 +94,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                 tabs.forEach { tab ->
                     val selected = when (tab.route) {
                         Route.Test -> current in testFlow
-                        Route.Map -> current == Route.Map.path || current == Route.SpotDetail.path
+                        Route.Map -> current == Route.Map.path || current == Route.SpotDetail.path || current == Route.Floors.path
                         else -> current == tab.route.path
                     }
                     NavigationBarItem(
@@ -193,8 +195,19 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     onReport = {
                         vm.setReportSpot(spot.id)
                         goToTab(Route.Report)
-                    }
+                    },
+                    hasFloors = FloorData.floorsFor(spot.id).isNotEmpty(),
+                    onViewFloors = { nav.navigate(Route.Floors.create(spot.id)) }
                 )
+            }
+
+            composable(
+                route = Route.Floors.path,
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
+            ) { entry ->
+                val id = entry.arguments?.getInt("id") ?: 1
+                val spot = spots.firstOrNull { it.id == id } ?: spots.first()
+                FloorMapScreen(spot = spot, onBack = { nav.popBackStack() })
             }
 
             // ---------- History + Report ----------
@@ -206,6 +219,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     spots = spots,
                     initialSpotId = state.reportSpotId ?: state.selectedSpot.id,
                     latestTest = state.history.firstOrNull(),
+                    onBack = { if (!nav.popBackStack()) goHome() },
                     onSubmit = { _, _, _, _ -> /* TODO: send to Firestore or email later */ }
                 )
             }
