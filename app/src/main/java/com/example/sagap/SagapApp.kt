@@ -122,6 +122,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                 TestHomeScreen(
                     spot = state.selectedSpot,
                     latest = SpotRepository.latest(state.results, state.selectedSpot.id),
+                    wifiInfo = state.wifiInfo,
                     onChangeLocation = { nav.navigate(Route.Locations.path) },
                     onStartTest = { startTestFlow() },
                     onFindSpot = { goToTab(Route.Map) },
@@ -220,7 +221,9 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     initialSpotId = state.reportSpotId ?: state.selectedSpot.id,
                     latestTest = state.history.firstOrNull(),
                     onBack = { if (!nav.popBackStack()) goHome() },
-                    onSubmit = { _, _, _, _ -> /* TODO: send to Firestore or email later */ }
+                    onSubmit = { spotId, issue, notes, attached ->
+                        vm.sendReport(spotId, issue, notes, attached)
+                    }
                 )
             }
         }
