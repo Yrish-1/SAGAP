@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -126,12 +127,39 @@ fun overallGrade(mbps: Double, pingMs: Double, rssi: Double? = null): Grade {
 
 @Suppress("DEPRECATION")
 fun readWifiDetails(context: Context): WifiDetails {
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
     val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-        ?: return WifiDetails(null, null, null, null, null)
-    val info = wm.connectionInfo ?: return WifiDetails(null, null, null, null, null)
+
+    var info: WifiInfo? = null
+
+    // Method 1: Modern Android 10+ (API 29+) ConnectivityManager TransportInfo
+    if (cm != null) {
+        val activeNet = cm.activeNetwork
+        if (activeNet != null) {
+            val caps = cm.getNetworkCapabilities(activeNet)
+            if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                info = caps.transportInfo as? WifiInfo
+            }
+        }
+    }
+
+    // Method 2: Fallback to WifiManager.connectionInfo
+    if (info == null && wm != null) {
+        info = wm.connectionInfo
+    }
+
+    if (info == null) {
+        return WifiDetails(null, null, null, null, null)
+    }
+
     val rssi = if (info.rssi <= -127) null else info.rssi
     val rawSsid = info.ssid
-    val ssid = if (rawSsid == null || rawSsid == "<unknown ssid>") null else rawSsid.removeSurrounding("\"")
+    val ssid = if (rawSsid == null || rawSsid == "<unknown ssid>" || rawSsid == "\"\"") {
+        null
+    } else {
+        rawSsid.removeSurrounding("\"")
+    }
+
     val bssid = if (info.bssid == null || info.bssid == "02:00:00:00:00:00") null else info.bssid
     val linkSpeed = if (info.linkSpeed <= 0) null else info.linkSpeed
     val frequency = info.frequency
@@ -140,6 +168,7 @@ fun readWifiDetails(context: Context): WifiDetails {
         frequency >= 2400 -> "2.4 GHz"
         else -> null
     }
+
     return WifiDetails(
         rssi = rssi,
         ssid = ssid,

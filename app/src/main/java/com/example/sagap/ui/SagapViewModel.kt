@@ -64,11 +64,15 @@ class SagapViewModel(application: Application) : AndroidViewModel(application) {
 
         // 1. Refresh live Wi-Fi connection info
         val wifi = readWifiDetails(context)
-        val ssid = wifi.ssid ?: "BatStateU CICS"
-        val band = wifi.band ?: "5 GHz"
-        val speed = wifi.linkSpeedMbps?.let { "Link speed $it Mbps" } ?: "Connected"
-        val details = "$band · $speed"
         val connected = com.example.sagap.isOnWifi(context)
+        val ssid = when {
+            wifi.ssid != null -> wifi.ssid
+            connected -> "Connected Wi-Fi"
+            else -> "Wi-Fi Disconnected"
+        }
+        val band = wifi.band ?: "Wi-Fi"
+        val speed = wifi.linkSpeedMbps?.let { "Link speed $it Mbps" } ?: "Connected"
+        val details = if (connected) "$band · $speed" else "Connect to Wi-Fi to test speed"
 
         // 2. Load stored test results from ResultStore
         val storedBackendResults = com.example.sagap.ResultStore.load(context)
@@ -116,6 +120,8 @@ class SagapViewModel(application: Application) : AndroidViewModel(application) {
         val context = getApplication<Application>()
         val spot = _state.value.selectedSpot
 
+        refreshState()
+
         _state.update {
             it.copy(
                 test = TestUiState(phase = TestPhase.RUNNING, secondsLeft = 6, progress = 0f)
@@ -152,11 +158,11 @@ class SagapViewModel(application: Application) : AndroidViewModel(application) {
                         timestamp = r.timeMillis
                     )
 
+                    refreshState()
+
                     _state.update {
                         it.copy(
                             lastResult = uiResult,
-                            results = listOf(uiResult) + it.results,
-                            history = listOf(uiResult) + it.history,
                             test = it.test.copy(
                                 phase = TestPhase.DONE,
                                 progress = 1f,

@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,8 +58,14 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
     val current = nav.currentBackStackEntryAsState().value?.destination?.route
     val spots = SampleData.spots
 
+    // Auto-refresh live Wi-Fi SSID and status on startup
+    LaunchedEffect(Unit) {
+        vm.refreshState()
+    }
+
     // Switch tabs. restore = false opens the tab fresh instead of bringing back its old screens.
     fun goToTab(route: Route, restore: Boolean = true) {
+        vm.refreshState()
         nav.navigate(route.path) {
             popUpTo(nav.graph.startDestinationId) { saveState = true }
             launchSingleTop = true
