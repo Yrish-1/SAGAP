@@ -1,5 +1,6 @@
 package com.example.sagap.ui.screens.map
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -32,6 +33,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,7 +62,7 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
     var areaId by remember(spot.id) { mutableStateOf<Int?>(null) }
     val floor = floors.firstOrNull { it.level == level }
 
-    // Zoom & pan state
+    // Zoom & pan state for floor plan images
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -119,7 +122,7 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                     IconButton(onClick = { scale = (scale - 0.25f).coerceAtLeast(1f); if (scale == 1f) offset = Offset.Zero }) {
                         Icon(Icons.Outlined.Remove, contentDescription = "Zoom Out", tint = Navy)
                     }
-                    IconButton(onClick = { scale = (scale + 0.25f).coerceAtMost(3.5f) }) {
+                    IconButton(onClick = { scale = (scale + 0.25f).coerceAtMost(4f) }) {
                         Icon(Icons.Outlined.Add, contentDescription = "Zoom In", tint = Navy)
                     }
                     IconButton(onClick = { scale = 1f; offset = Offset.Zero }) {
@@ -128,16 +131,17 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                 }
             }
 
-            // Zoomable & Pannable Floor Plan Layout
+            // Zoomable & Pannable Floor Plan Image View Container
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(280.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFF1EFE6))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFFDDE5EA), RoundedCornerShape(24.dp))
                     .pointerInput(Unit) {
                         detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 3.5f)
+                            scale = (scale * zoom).coerceIn(1f, 4f)
                             if (scale > 1f) {
                                 offset += pan
                             } else {
@@ -158,14 +162,27 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                 ) {
                     val w = maxWidth
                     val h = maxHeight
+
+                    // Render actual uploaded floor plan image
+                    if (floor.imageRes != null) {
+                        Image(
+                            painter = painterResource(id = floor.imageRes),
+                            contentDescription = "${spot.name} ${floor.label} Floor Plan",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
                     Text(
-                        "${floor.label.uppercase()} · ROOM LAYOUT",
+                        "${floor.label.uppercase()} · BLUEPRINT",
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(start = 12.dp, top = 8.dp),
                         fontSize = 9.sp,
-                        color = TextMuted
+                        fontWeight = FontWeight.Bold,
+                        color = Navy
                     )
+
                     floor.areas.forEach { a ->
                         AreaBlock(
                             area = a,
@@ -206,7 +223,7 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                     MetricTiles(shown.downloadMbps, shown.pingMs, shown.signalDbm)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Tap any room or floor to view Wi-Fi metrics.",
+                        "Tap any room on the floor blueprint to view Wi-Fi metrics.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextMuted
                     )
@@ -252,16 +269,16 @@ private fun AreaBlock(
     Column(
         modifier
             .pressable(shape, onClick = onClick)
-            .background(bg)
-            .border(if (selected) 3.dp else 1.5.dp, if (selected) Navy else fg, shape)
-            .padding(4.dp),
+            .background(bg.copy(alpha = 0.85f))
+            .border(if (selected) 2.5.dp else 1.dp, if (selected) Navy else fg, shape)
+            .padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
             area.name,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            fontSize = 9.sp,
+            lineHeight = 11.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -269,7 +286,7 @@ private fun AreaBlock(
         )
         Text(
             if (reading != null) "${fmtMbps(reading.downloadMbps)} Mbps" else "No data",
-            fontSize = 9.sp,
+            fontSize = 8.sp,
             maxLines = 1,
             color = fg
         )

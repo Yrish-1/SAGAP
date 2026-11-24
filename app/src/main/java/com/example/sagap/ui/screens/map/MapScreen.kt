@@ -1,9 +1,12 @@
 package com.example.sagap.ui.screens.map
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,12 +24,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.sagap.R
 import com.example.sagap.data.model.Spot
 import com.example.sagap.data.model.TestResult
-import com.example.sagap.data.sample.FloorData
 import com.example.sagap.data.repository.SpotRepository
+import com.example.sagap.data.sample.FloorData
 import com.example.sagap.domain.fmtMbps
 import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.PrimaryButton
@@ -49,10 +57,17 @@ fun MapScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        ScreenTitle("Campus Buildings", "Select a building to view floor maps and test Wi-Fi")
+        ScreenTitle("Campus Map", "Tap a building on the campus layout map below")
+
+        // Interactive Campus Map image with clickable building overlays
+        InteractiveCampusMap(
+            spots = spots,
+            results = results,
+            onSpotClick = onSpotClick
+        )
 
         Text(
-            "Select an approved campus building below:",
+            "Select a building to view its floor plans & test Wi-Fi:",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = TextDark
@@ -81,6 +96,109 @@ fun MapScreen(
                 onClick = { onSpotClick(best.first) }
             )
         }
+    }
+}
+
+@Composable
+private fun InteractiveCampusMap(
+    spots: List<Spot>,
+    results: List<TestResult>,
+    onSpotClick: (Spot) -> Unit
+) {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White)
+            .border(1.dp, Color(0xFFDDE5EA), RoundedCornerShape(24.dp))
+    ) {
+        val w = maxWidth
+        val h = maxHeight
+
+        // Render actual Campus Layout Image
+        Image(
+            painter = painterResource(id = R.drawable.campus_map),
+            contentDescription = "Alangilan Campus Map",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+
+        // Overlay 1: Sparta Gymnasium (Top-left building)
+        val gymSpot = spots.firstOrNull { it.id == 3 } ?: spots.getOrNull(2)
+        if (gymSpot != null) {
+            BuildingHotspotBadge(
+                spot = gymSpot,
+                label = "Sparta Gym (1F)",
+                modifier = Modifier
+                    .offset(w * 0.08f, h * 0.22f)
+                    .width(w * 0.38f),
+                onClick = { onSpotClick(gymSpot) }
+            )
+        }
+
+        // Overlay 2: CICS Building (Bottom-left building)
+        val cicsSpot = spots.firstOrNull { it.id == 2 } ?: spots.getOrNull(1)
+        if (cicsSpot != null) {
+            BuildingHotspotBadge(
+                spot = cicsSpot,
+                label = "CICS (5 Floors)",
+                modifier = Modifier
+                    .offset(w * 0.18f, h * 0.65f)
+                    .width(w * 0.32f),
+                onClick = { onSpotClick(cicsSpot) }
+            )
+        }
+
+        // Overlay 3: Albert Einstein Building (Right building)
+        val einsteinSpot = spots.firstOrNull { it.id == 1 } ?: spots.getOrNull(0)
+        if (einsteinSpot != null) {
+            BuildingHotspotBadge(
+                spot = einsteinSpot,
+                label = "Einstein (2 Floors)",
+                modifier = Modifier
+                    .offset(w * 0.58f, h * 0.32f)
+                    .width(w * 0.38f),
+                onClick = { onSpotClick(einsteinSpot) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun BuildingHotspotBadge(
+    spot: Spot,
+    label: String,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier
+            .clip(shape)
+            .background(Navy.copy(alpha = 0.92f))
+            .border(1.5.dp, Teal, shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            Modifier
+                .size(18.dp)
+                .background(Teal, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(spot.id.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(
+            label,
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
     }
 }
 

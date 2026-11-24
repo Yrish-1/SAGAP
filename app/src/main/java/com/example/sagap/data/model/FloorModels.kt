@@ -10,6 +10,11 @@ data class Area(
     val h: Float       // height
 )
 
-data class Floor(val level: Int, val label: String, val areas: List<Area>)
+data class Floor(
+    val level: Int,
+    val label: String,
+    val areas: List<Area>,
+    val imageRes: Int? = null
+)
 
 data class Reading(val downloadMbps: Double, val pingMs: Int, val signalDbm: Int)
