@@ -10,24 +10,21 @@ import kotlin.math.roundToInt
 
 object FloorData {
 
-    private fun makeFloorRow(
+    private fun makeFloor(
         level: Int,
         label: String,
         baseId: Int,
         roomNames: List<String>,
         imageRes: Int
     ): Floor {
-        val count = roomNames.size
-        // 8 rooms aligned horizontally across the top corridor of the blueprint
-        val itemW = 0.90f / count
         val areas = roomNames.mapIndexed { i, name ->
             Area(
                 id = baseId + i,
                 name = name,
-                mapX = 0.05f + itemW * i + itemW / 2f,
-                mapY = 0.38f,
-                w = itemW * 0.85f,
-                h = 0.20f
+                mapX = 0.5f,
+                mapY = 0.5f,
+                w = 0.2f,
+                h = 0.2f
             )
         }
         return Floor(level, label, areas, imageRes)
@@ -36,27 +33,22 @@ object FloorData {
     /** Floors of a building (spot id). */
     fun floorsFor(spotId: Int): List<Floor> = when (spotId) {
         1 -> listOf(  // Albert Einstein Building (2 floors)
-            makeFloorRow(1, "1st Floor", 110, listOf("Toilet F", "101", "102", "1013", "1014", "105", "106", "Toilet M"), R.drawable.einstein_floor1),
-            makeFloorRow(2, "2nd Floor", 120, listOf("Toilet F", "201", "202", "CPE", "Services", "Office", "Faculty", "Dean", "Toilet M"), R.drawable.einstein_floor2)
+            makeFloor(1, "1st Floor", 110, listOf("Female Toilet", "Room 101", "Room 102", "Room 1013", "Room 1014", "Room 105", "Room 106", "Male Toilet"), R.drawable.einstein_floor1),
+            makeFloor(2, "2nd Floor", 120, listOf("Female Toilet", "Room 201", "Room 202", "CPE Faculty", "CICS Student Services", "Consultation Office", "CICS Faculty", "Dean's Office", "Male Toilet"), R.drawable.einstein_floor2)
         )
         2 -> listOf(  // CICS Building (5 floors)
-            makeFloorRow(1, "1st Floor", 210, listOf("Lobby", "Cafeteria", "AVR", "CEAFA", "CE Lab", "Chem Lab"), R.drawable.cics_floor1),
-            makeFloorRow(2, "2nd Floor", 220, listOf("Toilet F", "201", "202", "Lab 1", "Lab 2", "Faculty", "Lab 3", "Toilet M"), R.drawable.cics_floor2),
-            makeFloorRow(3, "3rd Floor", 230, listOf("Toilet F", "Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6", "Toilet M"), R.drawable.cics_floor3),
-            makeFloorRow(4, "4th Floor", 240, listOf("Toilet F", "401", "Physics", "Smart", "EDL", "Tech", "ITL", "Toilet M"), R.drawable.cics_floor4),
-            makeFloorRow(5, "5th Floor", 250, listOf("Toilet F", "501", "502", "503", "504", "505", "506", "Toilet M"), R.drawable.cics_floor5)
+            makeFloor(1, "1st Floor", 210, listOf("Lobby", "Cafeteria", "Audio Visual Room", "CEAFA Lounge", "CE Lab", "Chemistry Lab"), R.drawable.cics_floor1),
+            makeFloor(2, "2nd Floor", 220, listOf("Library", "E-Lib", "Classrooms", "Engineering Faculty Room", "Conference Room"), R.drawable.cics_floor2),
+            makeFloor(3, "3rd Floor", 230, listOf("Female Toilet", "Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6", "Male Toilet"), R.drawable.cics_floor3),
+            makeFloor(4, "4th Floor", 240, listOf("Female Toilet", "Room 401", "Physics Lab", "SMART Lab", "EDL Lab", "Tech Lab", "ITL Lab", "Male Toilet"), R.drawable.cics_floor4),
+            makeFloor(5, "5th Floor", 250, listOf("Female Toilet", "Room 501", "Room 502", "Room 503", "Room 504", "Room 505", "Room 506", "Male Toilet"), R.drawable.cics_floor5)
         )
         3 -> listOf(  // Sparta Gymnasium (1 floor)
-            Floor(
+            makeFloor(
                 level = 1,
                 label = "Main Gym Floor",
-                areas = listOf(
-                    Area(310, "Entrance", 0.92f, 0.50f, 0.12f, 0.30f),
-                    Area(311, "Bleachers North", 0.50f, 0.22f, 0.40f, 0.15f),
-                    Area(312, "Main Court", 0.50f, 0.50f, 0.35f, 0.25f),
-                    Area(313, "Bleachers South", 0.50f, 0.78f, 0.40f, 0.15f),
-                    Area(314, "Stage", 0.10f, 0.50f, 0.12f, 0.30f)
-                ),
+                baseId = 310,
+                roomNames = listOf("Main Court", "Stage", "Bleachers", "Entrance"),
                 imageRes = R.drawable.gym_floor
             )
         )
@@ -80,7 +72,7 @@ object FloorData {
         250 to Reading(12.0, 48, -67), 251 to Reading(10.5, 52, -69), 252 to Reading(8.0, 60, -71),
         // Gymnasium
         310 to Reading(28.5, 25, -57), 311 to Reading(24.0, 30, -60), 312 to Reading(26.2, 28, -58),
-        313 to Reading(22.1, 33, -61), 314 to Reading(20.0, 35, -63)
+        313 to Reading(22.1, 33, -61)
     )
 
     fun gradeOf(r: Reading?): Grade =
