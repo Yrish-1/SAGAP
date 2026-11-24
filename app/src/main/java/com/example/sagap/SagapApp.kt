@@ -149,6 +149,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                 TestingScreen(
                     spot = state.selectedSpot,
                     state = state.test,
+                    wifiInfo = state.wifiInfo,
                     onCancel = { vm.cancelTest(); nav.popBackStack() },
                     onFinished = {
                         nav.navigate(Route.Result.path) {
@@ -165,6 +166,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     ResultScreen(
                         spot = spots.firstOrNull { it.id == result.spotId } ?: state.selectedSpot,
                         result = result,
+                        wifiInfo = state.wifiInfo,
                         onViewMap = { goToTab(Route.Map, restore = false) },
                         onTestAgain = {
                             vm.startTest()

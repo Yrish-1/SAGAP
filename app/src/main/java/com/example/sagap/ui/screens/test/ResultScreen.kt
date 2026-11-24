@@ -21,12 +21,12 @@ import androidx.compose.ui.unit.dp
 import com.example.sagap.data.model.Grade
 import com.example.sagap.data.model.Spot
 import com.example.sagap.data.model.TestResult
-import com.example.sagap.data.sample.SampleData
 import com.example.sagap.domain.Activity
 import com.example.sagap.domain.RatingEngine
 import com.example.sagap.domain.Verdict
 import com.example.sagap.domain.dayAndTime
 import com.example.sagap.domain.fitFor
+import com.example.sagap.ui.WifiInfoUiState
 import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.MetricTiles
 import com.example.sagap.ui.components.PrimaryButton
@@ -41,6 +41,7 @@ import com.example.sagap.ui.theme.*
 fun ResultScreen(
     spot: Spot,
     result: TestResult,
+    wifiInfo: WifiInfoUiState = WifiInfoUiState(),
     onViewMap: () -> Unit,
     onTestAgain: () -> Unit,
     onGoHome: () -> Unit
@@ -80,9 +81,9 @@ fun ResultScreen(
                 Spacer(Modifier.height(12.dp))
                 MetricTiles(result.downloadMbps, result.pingMs, result.signalDbm)
                 Spacer(Modifier.height(12.dp))
-                Text("${SampleData.WIFI_NAME} · 5 GHz", color = TextMuted, style = MaterialTheme.typography.bodyMedium)
+                Text("${wifiInfo.ssid} · ${wifiInfo.details}", color = TextMuted, style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "Wi-Fi only · Estimates · Saved to history",
+                    "Wi-Fi test complete · Saved to history",
                     color = TextMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -103,11 +104,11 @@ fun ResultScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Info, contentDescription = null, tint = Teal)
                     Spacer(Modifier.width(8.dp))
-                    Text("How this demo rates Wi-Fi", fontWeight = FontWeight.Bold, color = TextDark)
+                    Text("How SAGAP rates Wi-Fi", fontWeight = FontWeight.Bold, color = TextDark)
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Proposed thresholds, not official campus standards. Grade each metric separately; " +
+                    "Campus quality thresholds. Each metric is graded separately; " +
                             "the lowest metric grade sets the overall rating.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextMuted
@@ -133,7 +134,7 @@ fun ResultScreen(
             )
         }
 
-        // Pinned action bar: always visible, never hidden behind scrolling content
+        // Pinned action bar
         Column(
             Modifier
                 .fillMaxWidth()

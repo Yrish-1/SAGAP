@@ -34,10 +34,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sagap.data.model.Spot
-import com.example.sagap.data.sample.SampleData
 import com.example.sagap.domain.fmtMbps
 import com.example.sagap.ui.TestPhase
 import com.example.sagap.ui.TestUiState
+import com.example.sagap.ui.WifiInfoUiState
 import com.example.sagap.ui.components.InfoCard
 import com.example.sagap.ui.components.SecondaryButton
 import com.example.sagap.ui.components.StatusPill
@@ -49,6 +49,7 @@ import com.example.sagap.ui.theme.*
 fun TestingScreen(
     spot: Spot,
     state: TestUiState,
+    wifiInfo: WifiInfoUiState = WifiInfoUiState(),
     onCancel: () -> Unit,
     onFinished: () -> Unit
 ) {
@@ -71,7 +72,6 @@ fun TestingScreen(
     val tealSoft = Color(0xFFE3F1EE)
 
     Column(
-
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
@@ -89,7 +89,7 @@ fun TestingScreen(
             ) {
                 ScreenTitle("Testing your Wi-Fi", spot.name)
                 Text(
-                    "${SampleData.WIFI_NAME} · 5 GHz",
+                    "${wifiInfo.ssid} · ${wifiInfo.details}",
                     fontWeight = FontWeight.Bold,
                     color = TextDark
                 )
@@ -198,7 +198,7 @@ fun TestingScreen(
         SecondaryButton("Cancel test", onClick = onCancel, accent = GradeRed)
 
         Text(
-            "Sample test in progress · Readings are provisional until the test finishes.",
+            "Live Wi-Fi test in progress · Readings are saved to history when complete.",
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodySmall,
