@@ -18,15 +18,16 @@ object FloorData {
         imageRes: Int
     ): Floor {
         val count = roomNames.size
-        val itemW = 1f / count
+        // 8 rooms aligned horizontally across the top corridor of the blueprint
+        val itemW = 0.90f / count
         val areas = roomNames.mapIndexed { i, name ->
             Area(
                 id = baseId + i,
                 name = name,
-                mapX = itemW * i + itemW / 2f,
-                mapY = 0.5f,
-                w = itemW * 0.92f,
-                h = 0.65f
+                mapX = 0.05f + itemW * i + itemW / 2f,
+                mapY = 0.38f,
+                w = itemW * 0.85f,
+                h = 0.20f
             )
         }
         return Floor(level, label, areas, imageRes)
@@ -35,26 +36,26 @@ object FloorData {
     /** Floors of a building (spot id). */
     fun floorsFor(spotId: Int): List<Floor> = when (spotId) {
         1 -> listOf(  // Albert Einstein Building (2 floors)
-            makeFloorRow(1, "1st Floor", 110, listOf("Toilet F", "Room 101", "Room 102", "Room 103", "Room 104", "Room 105", "Room 106", "Toilet M"), R.drawable.einstein_floor1),
-            makeFloorRow(2, "2nd Floor", 120, listOf("Toilet F", "Room 201", "Room 202", "CPE Faculty", "Student Svcs", "Consultation", "Faculty", "Dean's Office", "Toilet M"), R.drawable.einstein_floor2)
+            makeFloorRow(1, "1st Floor", 110, listOf("Toilet F", "101", "102", "1013", "1014", "105", "106", "Toilet M"), R.drawable.einstein_floor1),
+            makeFloorRow(2, "2nd Floor", 120, listOf("Toilet F", "201", "202", "CPE", "Services", "Office", "Faculty", "Dean", "Toilet M"), R.drawable.einstein_floor2)
         )
         2 -> listOf(  // CICS Building (5 floors)
-            makeFloorRow(1, "1st Floor", 210, listOf("Lobby", "Cafeteria", "AVR Room", "CEAFA Lounge", "CE Lab", "Chemistry Lab"), R.drawable.cics_floor1),
-            makeFloorRow(2, "2nd Floor", 220, listOf("Toilet F", "Room 201", "Room 202", "Lab 1", "Lab 2", "Faculty", "Lab 3", "Toilet M"), R.drawable.cics_floor2),
+            makeFloorRow(1, "1st Floor", 210, listOf("Lobby", "Cafeteria", "AVR", "CEAFA", "CE Lab", "Chem Lab"), R.drawable.cics_floor1),
+            makeFloorRow(2, "2nd Floor", 220, listOf("Toilet F", "201", "202", "Lab 1", "Lab 2", "Faculty", "Lab 3", "Toilet M"), R.drawable.cics_floor2),
             makeFloorRow(3, "3rd Floor", 230, listOf("Toilet F", "Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6", "Toilet M"), R.drawable.cics_floor3),
-            makeFloorRow(4, "4th Floor", 240, listOf("Toilet F", "Room 401", "Physics Lab", "Smart Lab", "EDL Lab", "Tech Lab", "ITL Lab", "Toilet M"), R.drawable.cics_floor4),
-            makeFloorRow(5, "5th Floor", 250, listOf("Toilet F", "Room 501", "Room 502", "Room 503", "Room 504", "Room 505", "Room 506", "Toilet M"), R.drawable.cics_floor5)
+            makeFloorRow(4, "4th Floor", 240, listOf("Toilet F", "401", "Physics", "Smart", "EDL", "Tech", "ITL", "Toilet M"), R.drawable.cics_floor4),
+            makeFloorRow(5, "5th Floor", 250, listOf("Toilet F", "501", "502", "503", "504", "505", "506", "Toilet M"), R.drawable.cics_floor5)
         )
         3 -> listOf(  // Sparta Gymnasium (1 floor)
             Floor(
                 level = 1,
                 label = "Main Gym Floor",
                 areas = listOf(
-                    Area(310, "Entrance", 0.15f, 0.50f, 0.22f, 0.70f),
-                    Area(311, "Bleachers North", 0.50f, 0.20f, 0.40f, 0.28f),
-                    Area(312, "Main Court", 0.50f, 0.50f, 0.40f, 0.28f),
-                    Area(313, "Bleachers South", 0.50f, 0.80f, 0.40f, 0.28f),
-                    Area(314, "Stage", 0.85f, 0.50f, 0.22f, 0.70f)
+                    Area(310, "Entrance", 0.92f, 0.50f, 0.12f, 0.30f),
+                    Area(311, "Bleachers North", 0.50f, 0.22f, 0.40f, 0.15f),
+                    Area(312, "Main Court", 0.50f, 0.50f, 0.35f, 0.25f),
+                    Area(313, "Bleachers South", 0.50f, 0.78f, 0.40f, 0.15f),
+                    Area(314, "Stage", 0.10f, 0.50f, 0.12f, 0.30f)
                 ),
                 imageRes = R.drawable.gym_floor
             )
