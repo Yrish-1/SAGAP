@@ -45,11 +45,11 @@ object FloorData {
             )
         )
         2 -> listOf(  // CICS Building (5 floors)
-            makeFloor(1, "1st Floor", 210, listOf("Female Toilet", "Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6", "Male Toilet"), R.drawable.cics_floor1),
+            makeFloor(1, "1st Floor", 210, listOf("Female Toilet", "Room 101", "Room 102", "Room 103", "Room 104", "Room 105", "Room 106", "Male Toilet"), R.drawable.cics_floor1),
             makeFloor(2, "2nd Floor", 220, listOf("Female Toilet", "Room 201", "Room 202", "CPE Faculty", "CICS Student Services", "Consultation Office", "CICS Faculty", "Dean's Office", "Male Toilet"), R.drawable.cics_floor2),
             makeFloor(3, "3rd Floor", 230, listOf("Female Toilet", "Room 501", "Room 502", "Room 503", "Room 504", "Room 505", "Room 506", "Male Toilet"), R.drawable.cics_floor3),
             makeFloor(4, "4th Floor", 240, listOf("Female Toilet", "Room 401", "Physics Lab", "Smart Lab", "EDL Lab", "Tech Lab", "ITL Lab", "Male Toilet"), R.drawable.cics_floor4),
-            makeFloor(5, "5th Floor", 250, listOf("Female Toilet", "Room 101", "Room 102", "Room 1013", "Room 1014", "Room 105", "Room 106", "Male Toilet"), R.drawable.cics_floor5)
+            makeFloor(5, "5th Floor", 250, listOf("Female Toilet", "Lab 1", "Lab 2", "Lab 3", "Lab 4", "Lab 5", "Lab 6", "Male Toilet"), R.drawable.cics_floor5)
         )
         3 -> listOf(  // Sparta Gymnasium (1 floor)
             makeFloor(
