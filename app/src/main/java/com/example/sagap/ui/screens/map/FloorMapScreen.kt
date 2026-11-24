@@ -1,7 +1,9 @@
 package com.example.sagap.ui.screens.map
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,24 +11,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sagap.data.model.Area
 import com.example.sagap.data.model.Grade
 import com.example.sagap.data.model.Reading
 import com.example.sagap.data.model.Spot
@@ -49,6 +60,10 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
     var areaId by remember(spot.id) { mutableStateOf<Int?>(null) }
     val floor = floors.firstOrNull { it.level == level }
 
+    // Zoom & pan state for floor plan images
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -65,61 +80,137 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                 body = "Floor maps are not available for this building yet."
             )
         } else {
-            // Floor tabs, each with a dot showing that floor's overall quality
+            // Floor tabs
             Row(
                 Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 floors.forEach { f ->
                     FloorChip(
-                        label = "${f.level}F",
+                        label = f.label,
                         grade = FloorData.gradeOf(FloorData.averageOf(f)),
                         selected = f.level == level,
                         onClick = {
                             level = f.level
                             areaId = null
+                            scale = 1f
+                            offset = Offset.Zero
                         }
                     )
                 }
             }
 
-            // The floor plan
-            BoxWithConstraints(
+            // Interactive Zoom Controls Bar
+            Row(
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFF1EFE6))
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFFDDE5EA), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val w = maxWidth
-                val h = maxHeight
                 Text(
-                    "${floor.label.uppercase()} · SCHEMATIC",
-                    modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 8.dp),
-                    fontSize = 9.sp,
-                    color = TextMuted
+                    "Zoom: ${(scale * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
                 )
-                floor.areas.forEach { a ->
-                    AreaBlock(
-                        area = a,
-                        reading = FloorData.readings[a.id],
-                        selected = a.id == areaId,
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { scale = (scale - 0.25f).coerceAtLeast(1f); if (scale == 1f) offset = Offset.Zero }) {
+                        Icon(Icons.Outlined.Remove, contentDescription = "Zoom Out", tint = Navy)
+                    }
+                    IconButton(onClick = { scale = (scale + 0.25f).coerceAtMost(4f) }) {
+                        Icon(Icons.Outlined.Add, contentDescription = "Zoom In", tint = Navy)
+                    }
+                    IconButton(onClick = { scale = 1f; offset = Offset.Zero }) {
+                        Icon(Icons.Outlined.RestartAlt, contentDescription = "Reset Zoom", tint = Teal)
+                    }
+                }
+            }
+
+            // Zoomable & Pannable Floor Plan Image View Container
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFFDDE5EA), RoundedCornerShape(24.dp))
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 4f)
+                            if (scale > 1f) {
+                                offset += pan
+                            } else {
+                                offset = Offset.Zero
+                            }
+                        }
+                    }
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        )
+                ) {
+                    // Render clean uploaded floor blueprint image
+                    if (floor.imageRes != null) {
+                        Image(
+                            painter = painterResource(id = floor.imageRes),
+                            contentDescription = "${spot.name} ${floor.label} Floor Plan",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
+                    Text(
+                        "${floor.label.uppercase()} · BLUEPRINT",
                         modifier = Modifier
-                            .offset(w * (a.mapX - a.w / 2), h * (a.mapY - a.h / 2))
-                            .size(w * a.w, h * a.h),
-                        onClick = { areaId = a.id }
+                            .align(Alignment.TopStart)
+                            .padding(start = 12.dp, top = 8.dp),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Navy
                     )
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LegendItem(GradeGreen, "Good / Excellent")
-                LegendItem(GradeAmber, "Fair")
-                LegendItem(GradeRed, "Poor")
-                LegendItem(GradeGray, "No data")
+            // Room / Area Selection Chips under the blueprint
+            Text(
+                "Select a room on this floor:",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = TextDark
+            )
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                floor.areas.forEach { a ->
+                    val isSel = a.id == areaId
+                    val shape = RoundedCornerShape(50)
+                    Box(
+                        Modifier
+                            .pressable(shape) { areaId = if (isSel) null else a.id }
+                            .background(if (isSel) Teal else Color.White)
+                            .border(1.dp, if (isSel) Teal else Color(0xFFDDE5EA), shape)
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            a.name,
+                            color = if (isSel) Color.White else TextDark,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
 
-            // Details: the tapped room, or the floor average
             val selectedArea = floor.areas.firstOrNull { it.id == areaId }
             val shown: Reading? =
                 if (selectedArea != null) FloorData.readings[selectedArea.id] else FloorData.averageOf(floor)
@@ -139,7 +230,7 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                     MetricTiles(shown.downloadMbps, shown.pingMs, shown.signalDbm)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Sample data · tap a room on the plan to see its Wi-Fi.",
+                        "Select a room above to view its specific Wi-Fi readings.",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextMuted
                     )
@@ -148,7 +239,6 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                 }
             }
 
-            // All floors at a glance (top floor first, like a building)
             SectionTitle("All floors")
             WhiteCard {
                 val ordered = floors.sortedByDescending { it.level }
@@ -160,6 +250,8 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                         onClick = {
                             level = f.level
                             areaId = null
+                            scale = 1f
+                            offset = Offset.Zero
                         }
                     )
                     if (index < ordered.lastIndex) {
@@ -168,43 +260,6 @@ fun FloorMapScreen(spot: Spot, onBack: () -> Unit) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun AreaBlock(
-    area: Area,
-    reading: Reading?,
-    selected: Boolean,
-    modifier: Modifier,
-    onClick: () -> Unit
-) {
-    val (fg, bg) = gradeColors(FloorData.gradeOf(reading))
-    val shape = RoundedCornerShape(10.dp)
-    Column(
-        modifier
-            .pressable(shape, onClick = onClick)
-            .background(bg)
-            .border(if (selected) 3.dp else 1.5.dp, if (selected) Navy else fg, shape)
-            .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            area.name,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            color = TextDark
-        )
-        Text(
-            if (reading != null) "${fmtMbps(reading.downloadMbps)} Mbps" else "No data",
-            fontSize = 9.sp,
-            maxLines = 1,
-            color = fg
-        )
     }
 }
 
@@ -247,14 +302,5 @@ private fun FloorRow(label: String, avg: Reading?, selected: Boolean, onClick: (
             )
         }
         GradeChip(FloorData.gradeOf(avg))
-    }
-}
-
-@Composable
-private fun LegendItem(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(color, CircleShape))
-        Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 11.sp, color = TextMuted)
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,8 +58,14 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
     val current = nav.currentBackStackEntryAsState().value?.destination?.route
     val spots = SampleData.spots
 
+    // Auto-refresh live Wi-Fi SSID and status on startup
+    LaunchedEffect(Unit) {
+        vm.refreshState()
+    }
+
     // Switch tabs. restore = false opens the tab fresh instead of bringing back its old screens.
     fun goToTab(route: Route, restore: Boolean = true) {
+        vm.refreshState()
         nav.navigate(route.path) {
             popUpTo(nav.graph.startDestinationId) { saveState = true }
             launchSingleTop = true
@@ -122,6 +129,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                 TestHomeScreen(
                     spot = state.selectedSpot,
                     latest = SpotRepository.latest(state.results, state.selectedSpot.id),
+                    wifiInfo = state.wifiInfo,
                     onChangeLocation = { nav.navigate(Route.Locations.path) },
                     onStartTest = { startTestFlow() },
                     onFindSpot = { goToTab(Route.Map) },
@@ -141,6 +149,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                 TestingScreen(
                     spot = state.selectedSpot,
                     state = state.test,
+                    wifiInfo = state.wifiInfo,
                     onCancel = { vm.cancelTest(); nav.popBackStack() },
                     onFinished = {
                         nav.navigate(Route.Result.path) {
@@ -157,6 +166,7 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     ResultScreen(
                         spot = spots.firstOrNull { it.id == result.spotId } ?: state.selectedSpot,
                         result = result,
+                        wifiInfo = state.wifiInfo,
                         onViewMap = { goToTab(Route.Map, restore = false) },
                         onTestAgain = {
                             vm.startTest()
@@ -220,7 +230,9 @@ fun SagapApp(vm: SagapViewModel = viewModel()) {
                     initialSpotId = state.reportSpotId ?: state.selectedSpot.id,
                     latestTest = state.history.firstOrNull(),
                     onBack = { if (!nav.popBackStack()) goHome() },
-                    onSubmit = { _, _, _, _ -> /* TODO: send to Firestore or email later */ }
+                    onSubmit = { spotId, issue, notes, attached ->
+                        vm.sendReport(spotId, issue, notes, attached)
+                    }
                 )
             }
         }

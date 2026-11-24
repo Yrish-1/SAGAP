@@ -1,6 +1,6 @@
 package com.example.sagap.ui.screens.map
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.Apartment
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,25 +22,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sagap.data.model.Grade
+import com.example.sagap.R
 import com.example.sagap.data.model.Spot
 import com.example.sagap.data.model.TestResult
 import com.example.sagap.data.repository.SpotRepository
+import com.example.sagap.data.sample.FloorData
 import com.example.sagap.domain.fmtMbps
-import com.example.sagap.domain.timeAgo
 import com.example.sagap.ui.components.GradeChip
 import com.example.sagap.ui.components.PrimaryButton
-import com.example.sagap.ui.components.gradeColors
-import com.example.sagap.ui.components.gradeLabel
 import com.example.sagap.ui.components.ScreenTitle
+import com.example.sagap.ui.components.pressable
 import com.example.sagap.ui.theme.*
 
 @Composable
@@ -54,28 +57,36 @@ fun MapScreen(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ScreenTitle("Campus Map", "Tap a building on the campus layout map below")
 
-        ScreenTitle("Find your connection", "Alangilan Campus Map")
-        CampusMap(
+        // Interactive Campus Map image with clickable building overlays
+        InteractiveCampusMap(
             spots = spots,
             results = results,
-            highlightId = best?.first?.id,
             onSpotClick = onSpotClick
         )
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            LegendItem(GradeGreen, "Good / Excellent")
-            LegendItem(GradeAmber, "Fair")
-            LegendItem(GradeRed, "Poor")
-            LegendItem(GradeGray, "No recent data")
-        }
-
         Text(
-            "Sample averages of tests in the last 24 h. Numbered markers, not a heat map. " +
-                    "Schematic only; no GPS tracking. Safety holds are never recommended.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextMuted
+            "Select a building to view its floor plans & test Wi-Fi:",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = TextDark
         )
+
+        spots.forEach { spot ->
+            val floorCount = FloorData.floorsFor(spot.id).size
+            val icon = when (spot.id) {
+                3 -> Icons.Outlined.FitnessCenter
+                else -> Icons.Outlined.Apartment
+            }
+            BuildingButtonCard(
+                spot = spot,
+                floorCount = floorCount,
+                icon = icon,
+                avg = SpotRepository.average(results, spot.id),
+                onClick = { onSpotClick(spot) }
+            )
+        }
 
         if (best != null) {
             BestMatchCard(
@@ -89,130 +100,193 @@ fun MapScreen(
 }
 
 @Composable
-private fun CampusMap(
+private fun InteractiveCampusMap(
     spots: List<Spot>,
     results: List<TestResult>,
-    highlightId: Int?,
     onSpotClick: (Spot) -> Unit
 ) {
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .aspectRatio(0.95f)
+            .height(260.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFE3EBE3))
+            .background(Color.White)
+            .border(1.dp, Color(0xFFDDE5EA), RoundedCornerShape(24.dp))
     ) {
         val w = maxWidth
         val h = maxHeight
-        val cardW = w * 0.29f
-        val cardH = 72.dp
 
-        // Background: walkways, central quad, park, trees (all in fractions of the map size)
-        Canvas(Modifier.fillMaxSize()) {
-            fun block(x: Float, y: Float, bw: Float, bh: Float, color: Color) {
-                drawRoundRect(
-                    color = color,
-                    topLeft = Offset(size.width * x, size.height * y),
-                    size = Size(size.width * bw, size.height * bh),
-                    cornerRadius = CornerRadius(16f, 16f)
-                )
-            }
-            val walk = Color(0xFFF7F3E8)
-            block(0.46f, 0f, 0.08f, 1f, walk)
-            block(0f, 0.34f, 1f, 0.04f, walk)
-            block(0f, 0.64f, 1f, 0.04f, walk)
-            block(0.36f, 0.39f, 0.28f, 0.22f, Color(0xFFD2E3D0))
-            block(0.03f, 0.68f, 0.30f, 0.29f, Color(0xFFD2E3D0))
-            val tree = Color(0xFFBFD6BE)
-            listOf(
-                0.05f to 0.06f, 0.36f to 0.05f, 0.62f to 0.10f, 0.95f to 0.40f,
-                0.04f to 0.62f, 0.62f to 0.90f, 0.40f to 0.45f, 0.58f to 0.55f
-            ).forEach { (x, y) ->
-                drawCircle(tree, radius = 9.dp.toPx(), center = Offset(size.width * x, size.height * y))
-            }
+        // Render actual Campus Layout Image
+        Image(
+            painter = painterResource(id = R.drawable.campus_map),
+            contentDescription = "Alangilan Campus Map",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+
+        // Overlay 1: Sparta Gymnasium (Top-left building)
+        val gymSpot = spots.firstOrNull { it.id == 3 } ?: spots.getOrNull(2)
+        if (gymSpot != null) {
+            BuildingHotspotBadge(
+                spot = gymSpot,
+                label = "Sparta Gym (1F)",
+                modifier = Modifier
+                    .offset(w * 0.08f, h * 0.22f)
+                    .width(w * 0.38f),
+                onClick = { onSpotClick(gymSpot) }
+            )
         }
 
-        Text(
-            "BatStateU · ALANGILAN CAMPUS",
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 8.dp),
-            fontSize = 9.sp,
-            color = TextMuted
-        )
-        Text(
-            "SCHEMATIC · NOT TO SCALE",
-            modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 6.dp),
-            fontSize = 9.sp,
-            color = TextMuted
-        )
+        // Overlay 2: CICS Building (Bottom-left building)
+        val cicsSpot = spots.firstOrNull { it.id == 2 } ?: spots.getOrNull(1)
+        if (cicsSpot != null) {
+            BuildingHotspotBadge(
+                spot = cicsSpot,
+                label = "CICS (5 Floors)",
+                modifier = Modifier
+                    .offset(w * 0.18f, h * 0.65f)
+                    .width(w * 0.32f),
+                onClick = { onSpotClick(cicsSpot) }
+            )
+        }
 
-        spots.forEach { spot ->
-            val grade = SpotRepository.gradeOf(SpotRepository.average(results, spot.id))
-            val x = maxOf(4.dp, minOf(w * spot.mapX - cardW / 2, w - cardW - 4.dp))
-            val y = maxOf(4.dp, minOf(h * spot.mapY - cardH / 2, h - cardH - 4.dp))
-            MapSpotCard(
-                spot = spot,
-                grade = grade,
-                highlight = spot.id == highlightId,
-                modifier = Modifier.offset(x, y).size(cardW, cardH),
-                onClick = { onSpotClick(spot) }
+        // Overlay 3: Albert Einstein Building (Right building)
+        val einsteinSpot = spots.firstOrNull { it.id == 1 } ?: spots.getOrNull(0)
+        if (einsteinSpot != null) {
+            BuildingHotspotBadge(
+                spot = einsteinSpot,
+                label = "Einstein (2 Floors)",
+                modifier = Modifier
+                    .offset(w * 0.58f, h * 0.32f)
+                    .width(w * 0.38f),
+                onClick = { onSpotClick(einsteinSpot) }
             )
         }
     }
 }
 
 @Composable
-private fun MapSpotCard(
+private fun BuildingHotspotBadge(
     spot: Spot,
-    grade: Grade,
-    highlight: Boolean,
+    label: String,
     modifier: Modifier,
     onClick: () -> Unit
 ) {
-    val badgeColor = if (spot.onHold) GradeAmber else gradeColors(grade).first
-    val statusText = when {
-        spot.onHold -> "Safety hold"
-        grade == Grade.NO_DATA -> "No recent data"
-        else -> gradeLabel(grade)
-    }
-    val statusColor = if (spot.onHold) GradeRed else gradeColors(grade).first
-    val shape = RoundedCornerShape(10.dp)
-
-    Column(
+    val shape = RoundedCornerShape(12.dp)
+    Row(
         modifier
             .clip(shape)
-            .background(Color.White)
-            .border(
-                width = if (highlight) 2.dp else 1.dp,
-                color = if (highlight) Teal else Color(0xFFC9D2D8),
-                shape = shape
-            )
+            .background(Navy.copy(alpha = 0.92f))
+            .border(1.5.dp, Teal, shape)
             .clickable(onClick = onClick)
-            .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        Box(Modifier.size(22.dp).background(badgeColor, CircleShape), contentAlignment = Alignment.Center) {
-            Text(spot.id.toString(), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Box(
+            Modifier
+                .size(18.dp)
+                .background(Teal, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(spot.id.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
+        Spacer(Modifier.width(6.dp))
         Text(
-            spot.name,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            label,
+            color = Color.White,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            color = TextDark
+            maxLines = 1
         )
-        Text(statusText, fontSize = 9.sp, color = statusColor, maxLines = 1)
     }
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(color, CircleShape))
-        Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 11.sp, color = TextMuted)
+private fun BuildingButtonCard(
+    spot: Spot,
+    floorCount: Int,
+    icon: ImageVector,
+    avg: TestResult?,
+    onClick: () -> Unit
+) {
+    val grade = SpotRepository.gradeOf(avg)
+    val shape = RoundedCornerShape(20.dp)
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color.White)
+            .border(1.5.dp, Color(0xFFDDE5EA), shape)
+            .pressable(shape, onClick = onClick)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFE3F1EE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = Teal)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        spot.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.Layers,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "$floorCount ${if (floorCount == 1) "Floor" else "Floors"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                    }
+                }
+            }
+            GradeChip(grade)
+        }
+
+        if (avg != null) {
+            Text(
+                "Average ${fmtMbps(avg.downloadMbps)} Mbps · ${avg.pingMs} ms ping",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Teal
+            )
+        } else {
+            Text(
+                "No recent test data recorded yet",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted
+            )
+        }
+
+        PrimaryButton(
+            text = "View ${if (floorCount == 1) "Floor Map" else "$floorCount Floors"} & Test",
+            onClick = onClick,
+            icon = Icons.AutoMirrored.Outlined.ArrowForward,
+            color = Navy,
+            accent = Teal
+        )
     }
 }
 
@@ -249,18 +323,13 @@ private fun BestMatchCard(spot: Spot, avg: TestResult, testCount: Int, onClick: 
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "Open · $testCount tests / 24 h · Updated ${timeAgo(avg.timestamp)}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextMuted
-        )
-        Text(
-            "Exam fit is provisional; check stability on arrival.",
+            "Open · $testCount tests / 24 h",
             style = MaterialTheme.typography.bodyMedium,
             color = TextMuted
         )
         Spacer(Modifier.height(14.dp))
         PrimaryButton(
-            text = "View approved spot",
+            text = "View building details",
             onClick = onClick,
             icon = Icons.AutoMirrored.Outlined.ArrowForward
         )

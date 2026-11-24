@@ -21,6 +21,7 @@ import com.example.sagap.data.model.TestResult
 import com.example.sagap.domain.RatingEngine
 import com.example.sagap.domain.fmtMbps
 import com.example.sagap.domain.timeAgo
+import com.example.sagap.ui.WifiInfoUiState
 import com.example.sagap.ui.components.InfoCard
 import com.example.sagap.ui.components.LinkButton
 import com.example.sagap.ui.components.PrimaryButton
@@ -33,6 +34,7 @@ import com.example.sagap.ui.theme.*
 fun TestHomeScreen(
     spot: Spot,
     latest: TestResult?,
+    wifiInfo: WifiInfoUiState = WifiInfoUiState(),
     onChangeLocation: () -> Unit,
     onStartTest: () -> Unit,
     onFindSpot: () -> Unit,
@@ -57,8 +59,7 @@ fun TestHomeScreen(
             Text("Check your campus Wi-Fi before you settle in.", color = TextMuted)
         }
 
-        // Sample values for now; WifiMonitor will provide real ones later
-        WifiStatusCard(ssid = "BatStateU CICS", details = "5 GHz · Link speed 144 Mbps")
+        WifiStatusCard(ssid = wifiInfo.ssid, details = wifiInfo.details, isConnected = wifiInfo.isConnected)
 
         Row(
             Modifier.fillMaxWidth(),
@@ -104,7 +105,7 @@ fun TestHomeScreen(
 }
 
 @Composable
-private fun WifiStatusCard(ssid: String, details: String) {
+private fun WifiStatusCard(ssid: String, details: String, isConnected: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -118,12 +119,12 @@ private fun WifiStatusCard(ssid: String, details: String) {
         ) {
             Icon(Icons.Outlined.Wifi, contentDescription = null, tint = Color.White)
             Text(
-                "connected",
-                color = GradeGreen,
+                if (isConnected) "connected" else "disconnected",
+                color = if (isConnected) GradeGreen else GradeRed,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
-                    .background(GradeGreenBg, RoundedCornerShape(50))
+                    .background(if (isConnected) GradeGreenBg else GradeRedBg, RoundedCornerShape(50))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
