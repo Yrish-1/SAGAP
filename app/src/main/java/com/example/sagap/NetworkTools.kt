@@ -1,6 +1,7 @@
 package com.example.sagap
 
 import android.content.Context
+import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -29,6 +30,18 @@ fun isOnWifi(context: Context): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
     return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+}
+
+// True if device Location (GPS toggle) is enabled
+fun isLocationEnabled(context: Context): Boolean {
+    val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        ?: return false
+    return try {
+        lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    } catch (e: Exception) {
+        false
+    }
 }
 
 // Wi-Fi signal strength as a label, e.g. "Good (-55 dBm)"
@@ -130,39 +143,49 @@ fun readWifiDetails(context: Context): WifiDetails {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
     val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
 
-    var info: WifiInfo? = null
+    var rawSsid: String? = null
+    var rssi: Int? = null
+    var linkSpeed: Int? = null
+    var frequency = 0
+    var bssid: String? = null
 
-    // Method 1: Modern Android 10+ (API 29+) ConnectivityManager TransportInfo
-    if (cm != null) {
+    // Method 1: Try WifiManager.connectionInfo
+    val info = wm?.connectionInfo
+    if (info != null) {
+        if (info.rssi > -127) rssi = info.rssi
+        if (info.ssid != null && info.ssid != "<unknown ssid>" && info.ssid != "\"\"") {
+            rawSsid = info.ssid
+        }
+        if (info.bssid != null && info.bssid != "02:00:00:00:00:00") bssid = info.bssid
+        if (info.linkSpeed > 0) linkSpeed = info.linkSpeed
+        frequency = info.frequency
+    }
+
+    // Method 2: Modern ConnectivityManager transportInfo
+    if ((rawSsid == null || rawSsid == "<unknown ssid>") && cm != null) {
         val activeNet = cm.activeNetwork
         if (activeNet != null) {
             val caps = cm.getNetworkCapabilities(activeNet)
             if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                info = caps.transportInfo as? WifiInfo
+                val wifiInfo = caps.transportInfo as? WifiInfo
+                if (wifiInfo != null) {
+                    if (rawSsid == null && wifiInfo.ssid != null && wifiInfo.ssid != "<unknown ssid>" && wifiInfo.ssid != "\"\"") {
+                        rawSsid = wifiInfo.ssid
+                    }
+                    if (rssi == null && wifiInfo.rssi > -127) rssi = wifiInfo.rssi
+                    if (linkSpeed == null && wifiInfo.linkSpeed > 0) linkSpeed = wifiInfo.linkSpeed
+                    if (frequency == 0) frequency = wifiInfo.frequency
+                }
             }
         }
     }
 
-    // Method 2: Fallback to WifiManager.connectionInfo
-    if (info == null && wm != null) {
-        info = wm.connectionInfo
-    }
-
-    if (info == null) {
-        return WifiDetails(null, null, null, null, null)
-    }
-
-    val rssi = if (info.rssi <= -127) null else info.rssi
-    val rawSsid = info.ssid
     val ssid = if (rawSsid == null || rawSsid == "<unknown ssid>" || rawSsid == "\"\"") {
         null
     } else {
         rawSsid.removeSurrounding("\"")
     }
 
-    val bssid = if (info.bssid == null || info.bssid == "02:00:00:00:00:00") null else info.bssid
-    val linkSpeed = if (info.linkSpeed <= 0) null else info.linkSpeed
-    val frequency = info.frequency
     val band = when {
         frequency >= 5000 -> "5 GHz"
         frequency >= 2400 -> "2.4 GHz"

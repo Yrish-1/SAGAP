@@ -65,8 +65,11 @@ class SagapViewModel(application: Application) : AndroidViewModel(application) {
         // 1. Refresh live Wi-Fi connection info
         val wifi = readWifiDetails(context)
         val connected = com.example.sagap.isOnWifi(context)
+        val locEnabled = com.example.sagap.isLocationEnabled(context)
+
         val ssid = when {
             wifi.ssid != null -> wifi.ssid
+            connected && !locEnabled -> "Enable Location for Wi-Fi Name"
             connected -> "Connected Wi-Fi"
             else -> "Wi-Fi Disconnected"
         }
